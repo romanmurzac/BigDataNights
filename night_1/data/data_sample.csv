@@ -1,0 +1,2 @@
+person_name,personal_number,birth_date,address,phone_number,email,ip_address,card_provider,card_number,iban,cvv,card_expire,currency_code,transaction_currency,transacted_at,transaction_amount,transaction_number,from_country,to_country,record_id
+Grigore Cristea,1631101302368,1962-10-20,"Strada Ene, Rasnov Romacril, 760452",0720 803 498,grigorecristea@gmail.com,210.76.30.86,Maestro,30324729367472,RO49TTNX0618940893731529,751,10/31,IDR,Egyptian pound,2024-10-10 08:48:28,34542,7d117bf5-4b0d-424b-874c-cc255608233d,Bahrain,Tunisia,47a696d3-8599-4799-a61b-464a5a91acf5

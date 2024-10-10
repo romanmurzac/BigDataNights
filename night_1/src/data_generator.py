@@ -109,7 +109,6 @@ def write_to_csv(file_path: str) -> None:
 
 
 if __name__ == "__main__":
-
     # Initialize the process.
     print(softserve)
 
