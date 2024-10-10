@@ -75,7 +75,7 @@ def load_data(conn, file_path) -> None:
     # Close the cursor and connection to free resources.
     cur.close()
     conn.close()
-    logging.info("Data loaded into successfully.")
+    logging.info("Data loaded into database successfully.")
 
 
 if __name__ == "__main__":
