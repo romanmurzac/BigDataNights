@@ -236,16 +236,271 @@ Now in *pgAdmin 4* are available the server named `BDN`, the database named `bdn
 ![Image 8](./media/image_8.PNG)
 
 ### Extract raw data
-To load data to 
+To load data to the database c.\
+Create a file named `data_loader.py` where wil need to create a function that will load data to the *bronze_layer* schema, *raw_data* table. For this function use the code below.
+```
+def load_data(conn, file_path) -> None:
+    cur = conn.cursor()
+    with open(file_path, 'r', encoding='utf-8') as file:
+        next(file)
+        cur.copy_expert(f"""
+            COPY bronze_layer.raw_data(person_name, personal_number, birth_date, address, phone_number, email,
+                        ip_address, card_provider, card_number, iban, cvv, card_expire, currency_code, transaction_currency,
+                        transacted_at, transaction_amount, transaction_number, from_country, to_country, record_id)
+            FROM STDIN
+            WITH CSV HEADER DELIMITER ',' QUOTE '"'
+        """, file) 
+    conn.commit()
+    cur.close()
+    conn.close()
+```
+
+Run the command from below to generate the whole infrastructure.
+```
+python src/data_loader.py
+```
 ![Image 9](./media/image_9.PNG)
 
+In the *pgAdmin 4* run the query from below to see the data in the database.
+```
+SELECT
+    *
+FROM
+    bronze_layer.raw_data
+LIMIT
+    10
+```
 ![Image 10](./media/image_10.PNG)
 
 ### Create silver schema
 
+#### Prepare dbt
+Navigate to `C:\Users\<user>` and create a directory named `.dbt`. In the directory *.dbt* will be stored the configuration file for *dbt* project that will be generated automatically after setup the *dbt*. For now, the directory should be empty.\
 ![Image 11](./media/image_11.PNG)
 
+In terminal navigate to `night_1` directory using command below. This command will initialize a *dbt* project in selected directory.
+```
+cd night_1
+dbt init
+```
+
+During initialization it should be provided *Project name* as `bdn_dbt`, choose *default_database* as `1`, provide *host* as `localhost`, *port* as `5432`, *user* as `postgres`, for *pass* introduce your password, *dbname* as `bdn_dbt`, *schema* as `bronze_layer`, *threads* as `2`. Press enter after each introduced value.\
+![Image 12](./media/image_12.PNG)
+
+In terminal navigate to `bdn_dbt` directory using command below. This command will check if the connection is successful.
+```
+cd bdn_dbt
+dbt debug
+```
+![Image 13](./media/image_13.PNG)
+
+Now check again the directory `C:\Users\<user>`, there will be a file `profile.yml` with the content from below.\
+![Image 14](./media/image_14.PNG)
+
+In the project structure will be created a directory named `bdn_dbt` that contains a banch of subdirectories and files.\
+![Image 15](./media/image_15.PNG)
+
+#### Update dbt
+The default configuration was created on initialization run. In order to meet requirements some updates are necessary.\
+
+**Update dbt_project**\
+Open `dbt_project.yml` file and paste the content from below.
+```
+name: 'bdn_dbt'
+version: '1.0.0'
+
+profile: 'bdn_dbt'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets: 
+  - "target"
+  - "dbt_packages"
+
+models:
+  bdn_dbt:
+    raw:
+      +schema: 'bronze_layer'
+      +materialized: table
+    staging:
+      +schema: 'silver_layer'
+      +materialized: table
+    trusted:
+      +schema: 'golden_layer'
+      +materialized: table
+```
+**Update macros**\
+In `macros` directory create a file named `generate_schema_name.sql` and paste the content from below as per [dbt official documentation](https://docs.getdbt.com/docs/build/custom-schemas#how-does-dbt-generate-a-models-schema-name) in order to generate custom schemas.
+```
+{% macro generate_schema_name(custom_schema_name, node) %}
+    {%- if custom_schema_name is none -%}
+        {{ target.schema }}
+    {%- else -%}
+        {{ custom_schema_name }}
+    {%- endif -%}
+{%- endmacro %}
+```
+
+**Create source**\
+In `models` directory create a subdirectory named `bronze_layer`. In this subdirectory create a file named `schema.yml` and paste the content from below.
+```
+version: 2
+
+sources:
+  - name: bronze_layer
+    schema: bronze_layer
+    tables:
+      - name: raw_data
+```
+
 ### Transform data
+
+#### Model data
+Normalize the data by spliting the columns into dimension (dim) and fact tables, identify which columns belong to dimensions (attributes describing entities) and which belong to facts (measurable, quantitative data).\
+![Image 16](./media/image_16.PNG)
+
+#### Create schema
+In `models` directory create a subdirectory named `silver_layer`. In this subdirectory create a file named `schema.yml` and paste the content from below.
+```
+version: 2
+
+models:
+  - name: dim_person
+    description: "Dimension table for person details."
+    columns:
+      - name: person_name
+        description: "Name of the person."
+      - name: personal_number
+        description: "Unique personal identifier."
+      - name: birth_date
+        description: "Birth date of the person."
+      - name: address
+        description: "Address of the person."
+      - name: phone_number
+        description: "Phone number of the person."
+      - name: email
+        description: "Email address of the person."
+      - name: ip_address
+        description: "IP address of the person."
+
+  - name: dim_card
+    description: "Dimension table for card details."
+    columns:
+      - name: card_provider
+        description: "Provider of the card."
+      - name: card_number
+        description: "Card number."
+      - name: iban
+        description: "International Bank Account Number."
+      - name: cvv
+        description: "Card Verification Value."
+      - name: card_expire
+        description: "Expiration date of the card."
+      - name: currency_code
+        description: "Currency code for transactions."
+
+  - name: fact_transaction
+    description: "Fact table for transaction details."
+    columns:
+      - name: transaction_number
+        description: "Unique identifier for each transaction."
+      - name: transacted_at
+        description: "Date and time of the transaction."
+      - name: transaction_amount
+        description: "Amount involved in the transaction."
+      - name: from_country
+        description: "Country from which the transaction originates."
+      - name: to_country
+        description: "Country to which the transaction is sent."
+      - name: record_id
+        description: "Record identifier."
+      - name: personal_number
+        description: "Foreign key referencing dim_person."
+      - name: card_number
+        description: "Foreign key referencing dim_card."
+```
+
+#### Create models
+In `silver_layer` directory create a file named `dim_person.sql` and paste the content from below.
+```
+{{ config(
+    schema='silver_layer',
+    materialized='table'
+) }}
+
+SELECT
+    person_name,
+    personal_number,
+    birth_date,
+    address,
+    phone_number,
+    email,
+    ip_address
+FROM
+    {{ source('bronze_layer', 'raw_data') }}
+```
+
+In `silver_layer` directory create a file named `dim_card.sql` and paste the content from below.
+```
+{{ config(
+    schema='silver_layer',
+    materialized='table'
+) }}
+
+SELECT
+    card_provider,
+    card_number,
+    iban,
+    cvv,
+    card_expire,
+    currency_code
+FROM
+    {{ source('bronze_layer', 'raw_data') }}
+```
+
+In `silver_layer` directory create a file named `fact_transaction.sql` and paste the content from below.
+```
+{{ config(
+    schema='silver_layer',
+    materialized='table'
+) }}
+
+SELECT
+    transaction_number,
+    transacted_at,
+    transaction_amount,
+    from_country,
+    to_country,
+    record_id,
+    personal_number,
+    card_number
+FROM
+    {{ source('bronze_layer', 'raw_data') }}
+```
+
+#### Run models
+In the termina run the command from below to run models from *silver_layer* schema.
+```
+dbt run --models silver_layer
+```
+![Image 17](./media/image_17.PNG)
+
+In *pgAdmin 4* refresh the database and query the data from all three tables, as an example use the query from below.
+```
+SELECT
+	*
+FROM
+	silver_layer.dim_card
+LIMIT
+	20
+```
+![Image 18](./media/image_18.PNG)
+
 ### Create golden schema
 ### Load data
 ### Respond to the bussines questions

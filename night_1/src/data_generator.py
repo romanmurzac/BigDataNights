@@ -56,8 +56,9 @@ def generate_record(fake: Faker) -> list:
     card_expire = fake.credit_card_expire() # Generate expiration date.
 
     # Generate transaction data.
-    currency_code = fake.currency()[0] # Generate currency code.
-    transaction_currency = fake.currency()[1] # Generate currency.
+    currency = fake.currency() # Generate pair of code and currency.
+    currency_code = currency()[0] # Generate currency code.
+    transaction_currency = currency()[1] # Generate currency.
     transacted_at = fake.date_time_between("-1d", "now")  # Generate a date within the last day.
     transaction_amount = random.randint(0, 1_000_000)  # Generate transaction amount up to 1 million.
     transaction_number = fake.uuid4() # Generate transaction number.
