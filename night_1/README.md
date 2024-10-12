@@ -45,8 +45,9 @@ def generate_record(fake: Faker) -> list:
     iban = fake.iban()
     cvv = fake.credit_card_security_code()
     card_expire = fake.credit_card_expire()
-    currency_code = fake.currency()[0]
-    transaction_currency = fake.currency()[1]
+    currency = fake.currency()
+    currency_code = currency[0]
+    transaction_currency = currency[1]
     transacted_at = fake.date_time_between("-1d", "now")
     transaction_amount = random.randint(0, 1_000_000)
     transaction_number = fake.uuid4()
@@ -501,6 +502,324 @@ LIMIT
 ```
 ![Image 18](./media/image_18.PNG)
 
-### Create golden schema
 ### Load data
+
+#### Model data
+After that were transformed is time to load data to the trusted zone where they will be served to the business needs. Still, in order to make sure that only users with appropriate access level can query the data, it is needed to split data in PII and Non-PII tables. In *load* process this operation will be handled.
+
+#### Create schema
+In `models` directory create a subdirectory named `golden_layer`. In this subdirectory create a file named `schema.yml` and paste the content from below.
+```
+version: 2
+
+models:
+  - name: dim_person_nonpii
+    description: "Dimension table containing non-sensitive personal information for each individual." 
+
+  - name: dim_person_pii
+    description: "Dimension table containing sensitive personal information for each 
+
+  - name: dim_card_nonpii
+    description: "Dimension table containing non-sensitive card details."
+
+  - name: dim_card_nonpii
+    description: "Dimension table containing sensitive card details."
+
+  - name: fact_transactions
+    description: "Fact table containing transaction details."
+```
+
+#### Create models
+In `golden_layer` directory create a file named `dim_person_nonpii.sql` and paste the content from below.
+```
+{{ config(
+    schema='golden_layer',
+    materialized='table'
+) }}
+
+WITH staging_data AS (
+    SELECT
+        personal_number,
+        CONCAT(SUBSTRING(person_name, 1, 1), '***') AS masked_person_name,
+        birth_date,
+        CONCAT('***', SUBSTRING(address, LENGTH(address) - POSITION(',' IN REVERSE(address)) + 1, LENGTH(address))) AS masked_address,
+        CONCAT('***-***-', RIGHT(phone_number, 4)) AS masked_phone_number,
+        CONCAT('***@', SUBSTRING(email, POSITION('@' IN email) + 1)) AS masked_email,
+        CONCAT('***.***.***.', RIGHT(ip_address, 1)) AS masked_ip_address
+    FROM
+        {{ ref('dim_person') }}
+)
+
+SELECT
+    *
+FROM
+    staging_data
+```
+
+In `golden_layer` directory create a file named `dim_person_pii.sql` and paste the content from below.
+```
+{{ config(
+    schema='golden_layer',
+    materialized='table'
+) }}
+
+WITH staging_data AS (
+    SELECT
+        personal_number,
+        person_name,
+        birth_date,
+        address,
+        phone_number,
+        email,
+        ip_address
+    FROM
+        {{ ref('dim_person') }}
+)
+
+SELECT
+    *
+FROM
+    staging_data
+```
+
+In `golden_layer` directory create a file named `dim_card_nonpii.sql` and paste the content from below.
+```
+{{ config(
+    schema='golden_layer',
+    materialized='table'
+) }}
+
+WITH staging_data AS (
+    SELECT
+        card_provider,
+        CONCAT('***', RIGHT(CAST(card_number AS TEXT), 4)) AS masked_card_number,
+        iban,
+        '***' AS masked_cvv,
+        CONCAT('**/**') AS masked_card_expire,
+        currency_code,
+        transaction_currency
+    FROM
+        {{ ref('dim_card') }}
+)
+
+SELECT
+    *
+FROM
+    staging_data
+```
+
+In `golden_layer` directory create a file named `dim_card_pii.sql` and paste the content from below.
+```
+{{ config(
+    schema='golden_layer',
+    materialized='table'
+) }}
+
+WITH staging_data AS (
+    SELECT
+        card_provider,
+        card_number,
+        iban,
+        cvv,
+        card_expire,
+        currency_code,
+        transaction_currency
+    FROM
+        {{ ref('dim_card') }}
+)
+
+SELECT
+    *
+FROM
+    staging_data
+```
+
+In `golden_layer` directory create a file named `fact_transactions.sql` and paste the content from below.
+```
+{{ config(
+    schema='golden_layer',
+    materialized='table'
+) }}
+
+WITH staging_data AS (
+    SELECT
+        transaction_number,
+        transacted_at,
+        transaction_amount,
+        from_country,
+        to_country,
+        record_id,
+        personal_number,
+        card_number
+    FROM
+        {{ ref('fact_transaction') }}
+)
+
+SELECT
+    *
+FROM
+    staging_data
+```
+
+#### Run models
+In the terminal run the command from below to run models from *golden_layer* schema.
+```
+dbt run --models golden_layer
+```
+![Image 19](./media/image_19.PNG)
+
+In *pgAdmin 4* refresh the database and query the data from all five tables, as an example use the query from below.
+```
+SELECT
+	*
+FROM
+	golden_layer.dim_person_nonpii
+LIMIT
+	20
+```
+![Image 20](./media/image_20.PNG)
+
 ### Respond to the bussines questions
+
+#### Create schema
+In order to respond to business needs it is required to store the data in same *golden_layer*, but materialized as a *view* each result for business question.\
+As it is best practice to keep models with different scope in different directories, the `dbt_project.yml` file needs to be updated by adding content from below at the end of the file. Also, create a directory named `business_layer`.
+```
+    business_layer:
+      +schema: golden_layer
+      +materialized: view
+```
+
+In `business_layer` directory create a file named `schema.sql` and paste the content from below.
+```
+version: 2
+
+models:
+  - name: avg_transaction_amount_by_country
+    description: "Average transaction amount for each country where transactions originated, rounded to two decimal places and ordered in descending order."
+
+  - name: top_5_card_providers_by_transaction_amount
+    description: "Ranks card providers based on total transaction amount, returning the top 5 card providers."
+
+  - name: total_transaction_by_currency
+    description: "Calculates the total transaction amount grouped by transaction currency."
+
+  - name: transaction_count_by_person
+    description: "Counts the number of transactions per person."
+
+  - name: transactions_last_30_days
+    description: "Details of transactions made in the last 30 days, including transaction number, date, amount, person name, and card number."
+```
+
+#### Create models
+In `business_layer` directory create a file named `avg_transaction_amount_by_country.sql` and paste the content from below.
+```
+{{ config(
+    schema='golden_layer',
+    materialized='view'
+) }}
+
+SELECT
+    ft.from_country,
+    ROUND(AVG(ft.transaction_amount), 2) AS avg_transaction_amount
+FROM
+    {{ ref('fact_transactions') }} ft
+GROUP BY ft.from_country
+ORDER BY avg_transaction_amount DESC
+```
+
+In `business_layer` directory create a file named `top_5_card_providers_by_transaction_amount.sql` and paste the content from below.
+```
+{{ config(
+    schema='golden_layer',
+    materialized='view'
+) }}
+
+WITH ranked_transactions AS (
+    SELECT 
+        dc.card_number, 
+        dc.card_provider, 
+        SUM(ft.transaction_amount) AS total_transaction_amount,
+        RANK() OVER (ORDER BY SUM(ft.transaction_amount) DESC) AS rank
+    FROM {{ ref('fact_transactions') }} ft
+    JOIN {{ ref('dim_card_pii') }} dc ON ft.card_number = dc.card_number
+    GROUP BY dc.card_number, dc.card_provider
+)
+
+SELECT
+    *
+FROM
+    ranked_transactions
+WHERE
+    rank <= 5
+```
+
+In `business_layer` directory create a file named `total_transaction_by_currency.sql` and paste the content from below.
+```
+{{ config(
+    schema='golden_layer',
+    materialized='view'
+) }}
+
+SELECT
+    dc.transaction_currency,
+    SUM(ft.transaction_amount) AS total_transaction_amount
+FROM {{ ref('fact_transactions') }} ft
+JOIN {{ ref('dim_card_pii') }} dc ON ft.card_number = dc.card_number
+GROUP BY dc.transaction_currency
+ORDER BY total_transaction_amount DESC
+```
+
+In `business_layer` directory create a file named `transaction_count_by_person.sql` and paste the content from below.
+```
+{{ config(
+    schema='golden_layer',
+    materialized='view'
+) }}
+
+SELECT
+    dp.person_name,
+    COUNT(ft.transaction_number) AS transaction_count
+FROM {{ ref('fact_transactions') }} ft
+JOIN {{ ref('dim_person_pii') }} dp ON ft.personal_number = dp.personal_number
+GROUP BY dp.person_name
+ORDER BY transaction_count DESC
+```
+
+In `business_layer` directory create a file named `transactions_last_30_days.sql` and paste the content from below.
+```
+{{ config(
+    schema='golden_layer',
+    materialized='view'
+) }}
+
+SELECT
+    ft.transaction_number,
+    ft.transacted_at,
+    ft.transaction_amount,
+    dp.person_name,
+    dc.card_number
+FROM {{ ref('fact_transactions') }} ft
+JOIN {{ ref('dim_person_pii') }} dp ON ft.personal_number = dp.personal_number
+JOIN {{ ref('dim_card_pii') }} dc ON ft.card_number = dc.card_number
+WHERE ft.transacted_at >= CURRENT_DATE - INTERVAL '30 days'
+ORDER BY transacted_at DESC
+```
+
+#### Run models
+In the terminal run the command from below to run models from *business_layer* schema.
+```
+dbt run --select business_layer
+```
+![Image 21](./media/image_21.PNG)
+
+In *pgAdmin 4* refresh the database and query the data from all five views, as an example use the query from below.
+```
+SELECT
+	*
+FROM
+	business_layer.transactions_last_30_days
+LIMIT
+	20
+```
+![Image 22](./media/image_22.PNG)

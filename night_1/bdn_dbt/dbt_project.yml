@@ -41,3 +41,6 @@ models:
     golden_layer:
       +schema: 'golden_layer'
       +materialized: table
+    business_layer:
+      +schema: 'golden_layer'
+      +materialized: view
