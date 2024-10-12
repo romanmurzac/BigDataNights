@@ -1,25 +1,31 @@
 # Big Data Night #1 - Synthetic Data in Action: Proof of Concept in Real-World Scenarios
 
-## Topic
-
 ## Scenario
-person_name, personal_number, birth_date, address, phone_number, email, ip_address, card_provider, card_number, iban, cvv, card_expire, currency_code, transaction_currency, transacted_at, transaction_amount, transaction_number, from_country, to_country, record_id
+The client is *BigDataNight*, a romanian Start-Up company that provide a on-line banking for Information Technology start-ups from Romania.
+
+The client want to develop Analytic department that involve **Analytics** for daily reporting, **Machine Learning** for frauds and crime detection, **Artificial Intelligence** for own banking application.
+
+The client needs to have a dedicated server for their clients and transactions data. Also, needs to have a dedicated database and three different schema, one for each level of ETL: bronze, silver, and gold.\
+As the client activity is in financial field, there are sensitive data that cannot be used in development phase. The requirement is to work with synthetic data for development phase.\
+Data that are ingested daily varying from 101.101 to 303.303 transaction per day.\
+Available schema of the client data is: *person_name, personal_number, birth_date, address, phone_number, email, ip_address, card_provider, card_number, iban, cvv, card_expire, currency_code, transaction_currency, transacted_at, transaction_amount, transaction_number, from_country, to_country, record_id*.\
+As the client just started the activity, the system should be scalable and robust.
+
+The requirements for **Proof of Concept** are: generated synthetic data for testing; create local server; create dedicated database; create all three schemas, create tables - one for raw zone, three for staging zone, and five for trusted zone; extract raw data in raz zone; transform data in staging zone; load data and split between PII and Non-PII data; create business views for five business requirements: *Average transaction amount for each country where transactions originated, rounded to two decimal places and ordered in descending order*, *Ranks card providers based on total transaction amount, returning the top 5 card providers*, *Calculates the total transaction amount grouped by transaction currency*, *Counts the number of transactions per person*, and *Details of transactions made in the last 30 days, including transaction number, date, amount, person name, and card number*.
 
 ## Implementation
 This section present all practical stages from the project.\
 According to *Scenario* section there should be created the **Proof of Concept** for client requirements.\
-Stages for the **Proof of Concept**
+Stages for the **Proof of Concept:**
 * generated synthetic data.
 * create local server.
 * create dedicated database.
-* create bronze schema.
-* create table for raw data.
+* create schemas.
+* create tables.
 * extract raw data.
-* create silver schema.
 * transform data.
-* create golden schema.
 * load data.
-* respond to the bussines questions.
+* create business views.
 
 ### Generate Synthetic Data
 In order to fulfill the requirement and simulate the real sensitive data it will be used a library named [Faker](https://faker.readthedocs.io/en/master/) that allow to generate necessary type of data.
