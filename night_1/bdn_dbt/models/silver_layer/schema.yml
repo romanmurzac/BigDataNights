@@ -1,0 +1,56 @@
+version: 2
+
+models:
+  - name: dim_person
+    description: "Dimension table for person details."
+    columns:
+      - name: person_name
+        description: "Name of the person."
+      - name: personal_number
+        description: "Unique personal identifier."
+      - name: birth_date
+        description: "Birth date of the person."
+      - name: address
+        description: "Address of the person."
+      - name: phone_number
+        description: "Phone number of the person."
+      - name: email
+        description: "Email address of the person."
+      - name: ip_address
+        description: "IP address of the person."
+
+  - name: dim_card
+    description: "Dimension table for card details."
+    columns:
+      - name: card_provider
+        description: "Provider of the card."
+      - name: card_number
+        description: "Card number."
+      - name: iban
+        description: "International Bank Account Number."
+      - name: cvv
+        description: "Card Verification Value."
+      - name: card_expire
+        description: "Expiration date of the card."
+      - name: currency_code
+        description: "Currency code for transactions."
+
+  - name: fact_transaction
+    description: "Fact table for transaction details."
+    columns:
+      - name: transaction_number
+        description: "Unique identifier for each transaction."
+      - name: transacted_at
+        description: "Date and time of the transaction."
+      - name: transaction_amount
+        description: "Amount involved in the transaction."
+      - name: from_country
+        description: "Country from which the transaction originates."
+      - name: to_country
+        description: "Country to which the transaction is sent."
+      - name: record_id
+        description: "Record identifier."
+      - name: personal_number
+        description: "Foreign key referencing dim_person."
+      - name: card_number
+        description: "Foreign key referencing dim_card."

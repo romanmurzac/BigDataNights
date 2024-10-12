@@ -1,0 +1,6 @@
+softserve.py
+__pycache__/
+venv/
+credentials.json
+data_2024*
+logs/

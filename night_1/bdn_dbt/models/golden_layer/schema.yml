@@ -1,0 +1,117 @@
+version: 2
+
+models:
+  - name: dim_person_nonpii
+    description: "Dimension table containing personal information for each individual."
+    columns:
+      - name: personal_number
+        description: "Unique identifier for each individual."
+        tests:
+          - not_null
+          - unique
+      - name: person_name
+        description: "Full name of the individual."
+      - name: birth_date
+        description: "Date of birth of the individual."
+      - name: address
+        description: "Residential address of the individual."
+      - name: phone_number
+        description: "Phone number of the individual."
+      - name: email
+        description: "Email address of the individual."
+      - name: ip_address
+        description: "Last known IP address of the individual."
+
+  - name: dim_person_pii
+    description: "Dimension table containing personal information for each individual."
+    columns:
+      - name: personal_number
+        description: "Unique identifier for each individual."
+        tests:
+          - not_null
+          - unique
+      - name: person_name
+        description: "Full name of the individual."
+      - name: birth_date
+        description: "Date of birth of the individual."
+      - name: address
+        description: "Residential address of the individual."
+      - name: phone_number
+        description: "Phone number of the individual."
+      - name: email
+        description: "Email address of the individual."
+      - name: ip_address
+        description: "Last known IP address of the individual."
+
+  - name: dim_card_nonpii
+    description: "Dimension table containing card details."
+    columns:
+      - name: card_number
+        description: "Unique card number."
+        tests:
+          - not_null
+          - unique
+      - name: card_provider
+        description: "Provider of the card (e.g., Visa, MasterCard)."
+      - name: iban
+        description: "International Bank Account Number associated with the card."
+      - name: cvv
+        description: "Card Verification Value for security purposes."
+      - name: card_expire
+        description: "Expiration date of the card."
+      - name: currency_code
+        description: "Currency code (e.g., USD, EUR) used for transactions."
+      - name: transaction_currency
+        description: "Currency used for the transaction."
+
+  - name: dim_card_pii
+    description: "Dimension table containing card details."
+    columns:
+      - name: card_number
+        description: "Unique card number."
+        tests:
+          - not_null
+          - unique
+      - name: card_provider
+        description: "Provider of the card (e.g., Visa, MasterCard)."
+      - name: iban
+        description: "International Bank Account Number associated with the card."
+      - name: cvv
+        description: "Card Verification Value for security purposes."
+      - name: card_expire
+        description: "Expiration date of the card."
+      - name: currency_code
+        description: "Currency code (e.g., USD, EUR) used for transactions."
+      - name: transaction_currency
+        description: "Currency used for the transaction."
+
+  - name: fact_transactions
+    description: "Fact table containing transaction details."
+    columns:
+      - name: transaction_number
+        description: "Unique identifier for each transaction."
+        tests:
+          - not_null
+          - unique
+      - name: transacted_at
+        description: "Timestamp when the transaction took place."
+      - name: transaction_amount
+        description: "Monetary value of the transaction."
+      - name: from_country
+        description: "Country where the transaction originated."
+      - name: to_country
+        description: "Country where the transaction was received."
+      - name: record_id
+        description: "Record identifier for each transaction."
+      - name: personal_number
+        description: "Foreign key linking to the individual's personal information (from dim_person)."
+        tests:
+          - relationships:
+              to: ref('dim_person')
+              field: personal_number
+      - name: card_number
+        description: "Foreign key linking to the card details (from dim_card)."
+        tests:
+          - relationships:
+              to: ref('dim_card')
+              field: card_number

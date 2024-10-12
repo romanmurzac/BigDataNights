@@ -1,0 +1,52 @@
+version: 2
+
+models:
+  - name: avg_transaction_amount_by_country
+    description: "Average transaction amount for each country where transactions originated, rounded to two decimal places and ordered in descending order."
+    columns:
+      - name: from_country
+        description: "Country from where the transaction originated."
+      - name: avg_transaction_amount
+        description: "Rounded average amount of transactions originating from the country."
+
+  - name: top_5_card_providers_by_transaction_amount
+    description: "Ranks card providers based on total transaction amount, returning the top 5 card providers."
+    columns:
+      - name: card_number
+        description: "Unique identifier for the card."
+      - name: card_provider
+        description: "Name of the card provider (e.g., Visa, MasterCard)."
+      - name: total_transaction_amount
+        description: "Total amount of transactions associated with the card provider."
+      - name: rank
+        description: "Rank of the card provider based on total transaction amount, where rank 1 is the highest."
+
+  - name: total_transaction_amount_by_currency
+    description: "Calculates the total transaction amount grouped by transaction currency."
+    columns:
+      - name: transaction_currency
+        description: "Currency in which the transactions were made (e.g., USD, EUR)."
+      - name: total_transaction_amount
+        description: "Total amount of transactions in the specified currency."
+
+  - name: transaction_count_by_person
+    description: "Counts the number of transactions per person."
+    columns:
+      - name: person_name
+        description: "Name of the person associated with the transactions."
+      - name: transaction_count
+        description: "Total number of transactions made by the person."
+
+  - name: recent_transactions
+    description: "Details of transactions made in the last 30 days, including transaction number, date, amount, person name, and card number."
+    columns:
+      - name: transaction_number
+        description: "Unique identifier for each transaction."
+      - name: transacted_at
+        description: "Date and time when the transaction occurred."
+      - name: transaction_amount
+        description: "Amount involved in the transaction."
+      - name: person_name
+        description: "Name of the person associated with the transaction."
+      - name: card_number
+        description: "Card number used for the transaction."
