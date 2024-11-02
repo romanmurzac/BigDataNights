@@ -1,4 +1,4 @@
-# Big Data Night #1 - Synthetic Data in Action: Proof of Concept in Real-World Scenarios
+# Big Data Night #2 - Synthetic Data in Action: Proof of Concept in Real-World Scenarios
 
 ## Scenario
 The client is *BigDataNight*, a romanian Start-Up company that provide a on-line banking for Information Technology start-ups from Romania.
@@ -38,28 +38,28 @@ def create_data(locale: str) -> Faker:
 
 To generate actual type of data create another function bu pasting code from below.
 ```
-def generate_record(fake: Faker) -> list:
-    person_name = fake.name()
-    personal_number = fake.ssn()
-    birth_date = fake.date_of_birth(None, 18, 70)
-    address = fake.address().replace("\n", ", ")
-    phone_number = fake.phone_number()
-    email = person_name.replace(" ", "").lower()+"@"+fake.free_email_domain()
-    ip_address = fake.ipv4()
-    card_provider = fake.credit_card_provider()
-    card_number = fake.credit_card_number() 
-    iban = fake.iban()
-    cvv = fake.credit_card_security_code()
-    card_expire = fake.credit_card_expire()
-    currency = fake.currency()
+def generate_record(synthetic: Faker) -> list:
+    person_name = synthetic.name()
+    personal_number = synthetic.ssn()
+    birth_date = synthetic.date_of_birth(None, 18, 70)
+    address = synthetic.address().replace("\n", ", ")
+    phone_number = synthetic.phone_number()
+    email = person_name.replace(" ", "").lower()+"@"+synthetic.free_email_domain()
+    ip_address = synthetic.ipv4()
+    card_provider = synthetic.credit_card_provider()
+    card_number = synthetic.credit_card_number() 
+    iban = synthetic.iban()
+    cvv = synthetic.credit_card_security_code()
+    card_expire = synthetic.credit_card_expire()
+    currency = synthetic.currency()
     currency_code = currency[0]
     transaction_currency = currency[1]
-    transacted_at = fake.date_time_between("-1d", "now")
+    transacted_at = synthetic.date_time_between("-1d", "now")
     transaction_amount = random.randint(0, 1_000_000)
-    transaction_number = fake.uuid4()
-    from_country = fake.country()
-    to_country = fake.country()
-    record_id = fake.uuid4()
+    transaction_number = synthetic.uuid4()
+    from_country = synthetic.country()
+    to_country = synthetic.country()
+    record_id = synthetic.uuid4()
     return [
         person_name, personal_number, birth_date,
         address, phone_number, email, ip_address, card_provider,
@@ -71,7 +71,7 @@ def generate_record(fake: Faker) -> list:
 Also, create a function that will generate necessary number of records at each call. For this function copy the code from below.
 ```
 def write_to_csv(file_path: str) -> None:
-    fake = create_data("ro_RO")
+    synthetic = create_data("ro_RO")
     headers = [
         "person_name", "personal_number", "birth_date",
         "address", "phone_number", "email", "ip_address", "card_provider",
@@ -84,7 +84,7 @@ def write_to_csv(file_path: str) -> None:
         writer.writerow(headers)
         no_records = random.randint(101_101, 303_303)
         for _ in range(no_records):
-            writer.writerow(generate_record(fake))
+            writer.writerow(generate_record(synthetic))
 ```
 
 In order to generate data run the command from below.
@@ -155,10 +155,10 @@ To create a database build a function using the code below that will handle this
 ```
 def create_db(conn: psycopg2.connect, db_name: str) -> None:
     conn.autocommit = True
-    cur = conn.cursor()
+    cursor = conn.cursor()
     create_db_query = sql.SQL("CREATE DATABASE {}").format(sql.Identifier(db_name))
-    cur.execute(create_db_query)
-    cur.close()
+    cursor.execute(create_db_query)
+    cursor.close()
     conn.close()
 ```
 
@@ -178,10 +178,10 @@ def connect_db(credentials: dict) -> psycopg2.connect:
 To create schema and table create a function by pasting the code below and also create a SQL query for each.
 ```
 def create_object(conn: psycopg2.connect, creation_query: str) -> None:
-    cur = conn.cursor()
-    cur.execute(creation_query)
+    cursor = conn.cursor()
+    cursor.execute(creation_query)
     conn.commit()
-    cur.close()
+    cursor.close()
     conn.close()
 ```
 
@@ -189,10 +189,10 @@ def create_object(conn: psycopg2.connect, creation_query: str) -> None:
 To create schema and table create a function by pasting the code below and also create a SQL query for each.
 ```
 def create_object(conn: psycopg2.connect, creation_query: str) -> None:
-    cur = conn.cursor()
-    cur.execute(creation_query)
+    cursor = conn.cursor()
+    cursor.execute(creation_query)
     conn.commit()
-    cur.close()
+    cursor.close()
     conn.close()
 ```
 
@@ -247,10 +247,10 @@ To load data to the database c.\
 Create a file named `data_loader.py` where wil need to create a function that will load data to the *bronze_layer* schema, *raw_data* table. For this function use the code below.
 ```
 def load_data(conn, file_path) -> None:
-    cur = conn.cursor()
+    cursor = conn.cursor()
     with open(file_path, 'r', encoding='utf-8') as file:
         next(file)
-        cur.copy_expert(f"""
+        cursor.copy_expert(f"""
             COPY bronze_layer.raw_data(person_name, personal_number, birth_date, address, phone_number, email,
                         ip_address, card_provider, card_number, iban, cvv, card_expire, currency_code, transaction_currency,
                         transacted_at, transaction_amount, transaction_number, from_country, to_country, record_id)
@@ -258,7 +258,7 @@ def load_data(conn, file_path) -> None:
             WITH CSV HEADER DELIMITER ',' QUOTE '"'
         """, file) 
     conn.commit()
-    cur.close()
+    cursor.close()
     conn.close()
 ```
 
