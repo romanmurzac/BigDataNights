@@ -18,9 +18,9 @@ logging.basicConfig(
 
 def create_data(locale: str) -> Faker:
     """
-    Creates a Faker instance for generating localized fake data.
+    Creates a Faker instance for generating localized synthetic data.
     Args:
-        locale (str): The locale code for the desired fake data language/region.
+        locale (str): The locale code for the desired synthetic data language/region.
     Returns:
         Faker: An instance of the Faker class configured with the specified locale.
     """
@@ -29,44 +29,44 @@ def create_data(locale: str) -> Faker:
     return Faker(locale)
 
 
-def generate_record(fake: Faker) -> list:
+def generate_record(synthetic: Faker) -> list:
     """
-    Generates a single fake user record.
+    Generates a single synthetic user record.
     Args:
-        fake (Faker): A Faker instance for generating random data.
+        synthetic (Faker): A Faker instance for generating random data.
     Returns:
-        list: A list containing various fake user details such as name, username, email, etc.
+        list: A list containing various synthetic user details such as name, username, email, etc.
     """
     # Generate personal data.
-    person_name = fake.name() # Generate person name.
-    personal_number = fake.ssn()  # Generate a social security number.
-    birth_date = fake.date_of_birth(None, 18, 70)  # Generate a birth date.
-    address = fake.address().replace("\n", ", ")  # Replace newlines in the address with commas.
+    person_name = synthetic.name() # Generate person name.
+    personal_number = synthetic.ssn()  # Generate a social security number.
+    birth_date = synthetic.date_of_birth(None, 18, 70)  # Generate a birth date.
+    address = synthetic.address().replace("\n", ", ")  # Replace newlines in the address with commas.
 
     # Generate contact data.
-    phone_number = fake.phone_number()  # Generate a phone number.
-    email = person_name.replace(" ", "").lower()+"@"+fake.free_email_domain() # Generate email with a random email domain.
-    ip_address = fake.ipv4()  # Generate a IPv4 address.
+    phone_number = synthetic.phone_number()  # Generate a phone number.
+    email = person_name.replace(" ", "").lower()+"@"+synthetic.free_email_domain() # Generate email with a random email domain.
+    ip_address = synthetic.ipv4()  # Generate a IPv4 address.
 
     # Generate credit card data.
-    card_provider = fake.credit_card_provider() # Generate card provider.
-    card_number = fake.credit_card_number() # Generate credit card number.
-    iban = fake.iban()  # Generate an IBAN.
-    cvv = fake.credit_card_security_code() # Generate CVV.
-    card_expire = fake.credit_card_expire() # Generate expiration date.
+    card_provider = synthetic.credit_card_provider() # Generate card provider.
+    card_number = synthetic.credit_card_number() # Generate credit card number.
+    iban = synthetic.iban()  # Generate an IBAN.
+    cvv = synthetic.credit_card_security_code() # Generate CVV.
+    card_expire = synthetic.credit_card_expire() # Generate expiration date.
 
     # Generate transaction data.
-    currency = fake.currency() # Generate pair of code and currency.
+    currency = synthetic.currency() # Generate pair of code and currency.
     currency_code = currency[0] # Generate currency code.
     transaction_currency = currency[1] # Generate currency.
-    transacted_at = fake.date_time_between("-1d", "now")  # Generate a date within the last day.
+    transacted_at = synthetic.date_time_between("-1d", "now")  # Generate a date within the last day.
     transaction_amount = random.randint(0, 1_000_000)  # Generate transaction amount up to 1 million.
-    transaction_number = fake.uuid4() # Generate transaction number.
-    from_country = fake.country() # Generate country from where was made the transaction.
-    to_country = fake.country() # Generate country to where was made the transaction.
+    transaction_number = synthetic.uuid4() # Generate transaction number.
+    from_country = synthetic.country() # Generate country from where was made the transaction.
+    to_country = synthetic.country() # Generate country to where was made the transaction.
 
     # Add record id.
-    record_id = fake.uuid4() # Generate unique record id.
+    record_id = synthetic.uuid4() # Generate unique record id.
 
     # Return all the generated data as a list.
     return [
@@ -80,12 +80,12 @@ def generate_record(fake: Faker) -> list:
 
 def write_to_csv(file_path: str) -> None:
     """
-    Generates multiple fake user records and writes them to a CSV file.
+    Generates multiple synthetic user records and writes them to a CSV file.
     Args:
         file_path (str): The path where the CSV file will be saved.
     """
     # Create a Faker instance with Romanian data.
-    fake = create_data("ro_RO")
+    synthetic = create_data("ro_RO")
     
     # Define the CSV headers.
     headers = [
@@ -104,7 +104,7 @@ def write_to_csv(file_path: str) -> None:
         # Generate and write each record to the CSV.
         no_records = random.randint(101_101, 303_303)
         for _ in range(no_records):
-            writer.writerow(generate_record(fake))
+            writer.writerow(generate_record(synthetic))
     # Log the action.
     logging.info(f"Written {no_records} records to the CSV file.")
 

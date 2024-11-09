@@ -58,12 +58,12 @@ def load_data(conn, file_path) -> None:
         file_path (str): Path to the CSV file containing the data to load.
     """
     # Open a cursor to perform database operations.
-    cur = conn.cursor()
+    cursor = conn.cursor()
     with open(file_path, 'r', encoding='utf-8') as file:
         # Skip the header row if present in the CSV file.
         next(file)
         # Use the COPY command to load data into the specified table.
-        cur.copy_expert(f"""
+        cursor.copy_expert(f"""
             COPY bronze_layer.raw_data(person_name, personal_number, birth_date, address, phone_number, email,
                         ip_address, card_provider, card_number, iban, cvv, card_expire, currency_code, transaction_currency,
                         transacted_at, transaction_amount, transaction_number, from_country, to_country, record_id)
@@ -73,7 +73,7 @@ def load_data(conn, file_path) -> None:
     # Commit the data loading operation to the database.   
     conn.commit()
     # Close the cursor and connection to free resources.
-    cur.close()
+    cursor.close()
     conn.close()
     logging.info("Data loaded into database successfully.")
 

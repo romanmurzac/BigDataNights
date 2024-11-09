@@ -75,13 +75,13 @@ def create_db(conn: psycopg2.connect, db_name: str) -> None:
     # Set autocommit to True to allow CREATE DATABASE command outside of a transaction block.
     conn.autocommit = True
     # Open a cursor to perform database operations.
-    cur = conn.cursor()
+    cursor = conn.cursor()
     # SQL to create a database.
     create_db_query = sql.SQL("CREATE DATABASE {}").format(sql.Identifier(db_name))
     # Execute the query.
-    cur.execute(create_db_query)
+    cursor.execute(create_db_query)
     # Close the connection and cursor.
-    cur.close()
+    cursor.close()
     conn.close()
     logging.info("Create database.")
 
@@ -94,13 +94,13 @@ def create_object(conn: psycopg2.connect, creation_query: str) -> None:
         creation_query (str): The SQL query to create the database object.
     """
     # Open a cursor to perform database operations.
-    cur = conn.cursor()
+    cursor = conn.cursor()
     # Execute the provided SQL command for creation.
-    cur.execute(creation_query)
+    cursor.execute(creation_query)
     # Commit the changes to the database.
     conn.commit()
     # Close the cursor and connection to free resources.
-    cur.close()
+    cursor.close()
     conn.close()
     logging.info("Create table / schema.")
 
