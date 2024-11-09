@@ -291,7 +291,7 @@ cd night_1
 dbt init
 ```
 
-During initialization it should be provided *Project name* as `bdn_dbt`, choose *default_database* as `1`, provide *host* as `localhost`, *port* as `5432`, *user* as `postgres`, for *pass* introduce your password, *dbname* as `bdn_dbt`, *schema* as `bronze_layer`, *threads* as `2`. Press enter after each introduced value.\
+During initialization it should be provided *Project name* as `bdn_dbt`, choose *default_database* as `1`, provide *host* as `localhost`, *port* as `5432`, *user* as `postgres`, for *pass* introduce your password, *dbname* as `bdn_db`, *schema* as `bronze_layer`, *threads* as `2`. Press enter after each introduced value.\
 ![Image 12](./media/image_12.PNG)
 
 In terminal navigate to `bdn_dbt` directory using command below. This command will check if the connection is successful.
@@ -410,6 +410,8 @@ models:
         description: "Expiration date of the card."
       - name: currency_code
         description: "Currency code for transactions."
+      - name: transaction_currency
+        description: "Currency that was used for transaction."
 
   - name: fact_transaction
     description: "Fact table for transaction details."
@@ -465,7 +467,8 @@ SELECT
     iban,
     cvv,
     card_expire,
-    currency_code
+    currency_code,
+    transaction_currency
 FROM
     {{ source('bronze_layer', 'raw_data') }}
 ```
